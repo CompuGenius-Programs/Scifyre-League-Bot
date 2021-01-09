@@ -6,6 +6,8 @@ import youtube_dl
 import emoji
 
 from discord.ext import commands
+from discord_slash import SlashCommand
+from discord_slash import SlashContext
 
 dotenv.load_dotenv()
 token = os.getenv("TOKEN")
@@ -80,8 +82,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix='-', intents=intents)
+bot = commands.Bot(command_prefix='-', intents=discord.Intents.all())
 bot.remove_command('help')
+slash = SlashCommand(bot, auto_register=True, auto_delete=True)
 
 
 def create_embed(title, description, color, footer, image="", *, url="", author="", author_url=""):
@@ -148,24 +151,25 @@ async def handle_done_playing(react_msg, voice_client, member):
         await react_msg.add_reaction(emoji.emojize(":cross_mark:"))
 
 
-@bot.command()
-async def help(ctx):
+@slash.slash(name="help", description="Get help for using the bot.")
+async def _help(ctx):
     description = '''
     A bot created by <@496392770374860811> for the Starfire server.
 
     • Join the 🎶-Music voice chat to listen to Starfire soundtracks
     
-    -links | Lists important links
-    -help | Displays this message
+    /links | Lists important links
+    /help | Displays this message
     '''
 
     embed = create_embed(title="Starfire Bot Help", description=description, color=discord.Color.green(),
                          image="https://starfire.cgprograms.com/images/logo.png", url="https://starfire.cgprograms.com",
                          footer="© CompuGenius Programs. All rights reserved.")
-    await ctx.send(embed=embed)
+
+    await bot.get_channel(bot_channel).send(embed=embed)
 
 
-@bot.command()
+@slash.slash(name="links", description="List important Starfire links.")
 async def links(ctx):
     description = '''
     **Website:** *<https://starfire.cgprograms.com>*
@@ -188,7 +192,7 @@ async def on_ready():
     print('------')
 
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing,
-                                                        name="Managing the Starfire server. Type -help."))
+                                                        name="Managing the Starfire server. Type /help."))
 
 
 @bot.event
